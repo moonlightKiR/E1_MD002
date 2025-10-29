@@ -1,12 +1,3 @@
 requests
 flask
 pydantic
-urllib3
-chardet
-charset-normalizer
-idna
-certifi
-werkzeug
-markupsafe
-click
-blinker
