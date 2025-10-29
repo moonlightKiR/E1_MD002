@@ -4,3 +4,4 @@ pydantic==2.5.3
 urllib3==2.3.0
 chardet==5.2.0
 charset-normalizer==3.4.1
+idna==3.9
