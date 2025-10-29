@@ -228,9 +228,9 @@ def show_stats():
 
 def start_web_app():
     """Inicia la aplicación web."""
-    print("🌐 Iniciando aplicación web...")
-    print("📊 Abre tu navegador y ve a: http://localhost:8080")
-    print("⏹️  Presiona Ctrl+C para detener el servidor")
+    print("Iniciando aplicación web...")
+    print("Abre tu navegador y ve a: http://localhost:8080")
+    print("Presiona Ctrl+C para detener el servidor")
     app.run(debug=True, host='0.0.0.0', port=8080)
 
 
@@ -239,5 +239,3 @@ if __name__ == "__main__":
     main()
     if len(sys.argv) > 1 and sys.argv[1] == "web":
         start_web_app()
-    else:
-        main()
