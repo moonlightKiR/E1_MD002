@@ -5,4 +5,4 @@ urllib3==2.3.0
 chardet==5.2.0
 charset-normalizer==3.4.1
 idna==3.9
-certifi==2025.10.28
+certifi==2025.10.5
