@@ -1,51 +1,46 @@
 import requests
 import json
-from dataclasses import dataclass, asdict
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from flask import Flask
 from collections import Counter
+from pydantic import BaseModel
 
 
-# ==== CLASES DE DATOS ====
+# ==== MODELOS (Pydantic) ====
 
-@dataclass
-class Street:
+class Street(BaseModel):
     number: int
     name: str
 
 
-@dataclass
-class Coordinates:
+class Coordinates(BaseModel):
     latitude: str
     longitude: str
 
 
-@dataclass
-class Timezone:
+class Timezone(BaseModel):
     offset: str
     description: str
 
 
-@dataclass
-class Location:
+class Location(BaseModel):
     street: Street
     city: str
     state: str
     country: str
-    postcode: int
+    # randomuser puede devolver postcode como int o str
+    postcode: Union[int, str]
     coordinates: Coordinates
     timezone: Timezone
 
 
-@dataclass
-class Name:
+class Name(BaseModel):
     title: str
     first: str
     last: str
 
 
-@dataclass
-class Login:
+class Login(BaseModel):
     uuid: str
     username: str
     password: str
@@ -55,33 +50,28 @@ class Login:
     sha256: str
 
 
-@dataclass
-class DOB:
+class DOB(BaseModel):
     date: str
     age: int
 
 
-@dataclass
-class Registered:
+class Registered(BaseModel):
     date: str
     age: int
 
 
-@dataclass
-class ID:
+class ID(BaseModel):
     name: str
     value: Optional[str]
 
 
-@dataclass
-class Picture:
+class Picture(BaseModel):
     large: str
     medium: str
     thumbnail: str
 
 
-@dataclass
-class User:
+class User(BaseModel):
     gender: str
     name: Name
     location: Location
@@ -94,32 +84,6 @@ class User:
     id: ID
     picture: Picture
     nat: str
-
-    @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "User":
-        """Crea un objeto User a partir de un diccionario JSON."""
-        return User(
-            gender=data["gender"],
-            name=Name(**data["name"]),
-            location=Location(
-                street=Street(**data["location"]["street"]),
-                city=data["location"]["city"],
-                state=data["location"]["state"],
-                country=data["location"]["country"],
-                postcode=data["location"]["postcode"],
-                coordinates=Coordinates(**data["location"]["coordinates"]),
-                timezone=Timezone(**data["location"]["timezone"]),
-            ),
-            email=data["email"],
-            login=Login(**data["login"]),
-            dob=DOB(**data["dob"]),
-            registered=Registered(**data["registered"]),
-            phone=data["phone"],
-            cell=data["cell"],
-            id=ID(**data["id"]),
-            picture=Picture(**data["picture"]),
-            nat=data["nat"],
-        )
 
 
 # ==== FUNCIÓN PRINCIPAL ====
@@ -143,7 +107,7 @@ def fetch_users(amount: int = 2000) -> List[User]:
     data: Dict[str, Any] = response.json()
     users_json: List[Dict[str, Any]] = data["results"]
 
-    return [User.from_dict(user) for user in users_json]
+    return [User.model_validate(user) for user in users_json]
 
 
 def load_users_from_json(filename: str = "users.json") -> List[Dict[str, Any]]:
@@ -183,7 +147,7 @@ def main() -> None:
     users: List[User] = fetch_users(amount=2000)
     
     # Convertir los objetos User a diccionarios para poder serializar a JSON
-    users_data = [asdict(user) for user in users]
+    users_data = [user.model_dump() for user in users]
     
     # Guardar en archivo JSON
     with open("users.json", "w", encoding="utf-8") as file:
