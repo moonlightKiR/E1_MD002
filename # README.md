@@ -36,14 +36,14 @@ Para que el script `main.sh` se ejecute automáticamente al iniciar la máquina 
 2. Antes de la línea `exit 0` (o al final si no existe), añade la siguiente línea:
 
    ```
-   /bin/bash /home/guille/main.sh &
+   /bin/sh /home/guille/main.sh &
    ```
 
    El contenido debería quedar similar a:
 
    ```bash
    #!/bin/bash
-   /bin/bash /home/guille/main.sh &
+   /bin/sh /home/guille/main.sh &
    exit 0
    ```
 
@@ -51,5 +51,31 @@ Para que el script `main.sh` se ejecute automáticamente al iniciar la máquina 
 
 ---
 
-> Con esto, el script se ejecutará automáticamente cada vez que la máquina virtual arranque.
+## Alternativa: usar crontab
+
+Si prefieres usar `crontab` en lugar de `rc.local`, puedes seguir estos pasos:
+
+### Pasos:
+
+1. Instala cron si no está instalado:
+   ```bash
+   sudo apt update
+   sudo apt install cron
+   ```
+
+2. Edita el crontab:
+   ```bash
+   crontab -e
+   ```
+
+3. Añade la siguiente línea al final del archivo:
+   ```
+   @reboot /home/guille/main.sh
+   ```
+
+4. Guarda el archivo y sal del editor (`CTRL+O`, `Enter`, luego `CTRL+X` si usas nano).
+
+---
+
+> Con cualquiera de estos métodos, el script se ejecutará automáticamente cada vez que la máquina virtual arranque.
 
