@@ -154,17 +154,38 @@ def count_users_by_nationality(users_data: List[Dict[str, Any]]) -> Dict[str, in
 
 
 def main() -> None:
-    """Descarga, guarda usuarios y valida contraseñas."""
+    """Descarga, limpia, guarda y analiza usuarios."""
     users: List[User] = fetch_users(amount=200)
-    users_data = [user.model_dump() for user in users]
 
+    """Se limpian los nulos"""
+    cleaned_users = []
+    for user in users:
+        if (
+            user.email
+            and user.login.password
+            and user.location.country
+            and user.dob.age is not None
+        ):
+            cleaned_users.append(user)
+
+    total_original = len(users)
+    total_cleaned = len(cleaned_users)
+    eliminados = total_original - total_cleaned
+
+    print("Limpieza de datos:")
+    print(f" - Total registros originales: {total_original}")
+    print(f" - Registros eliminados por nulos: {eliminados}")
+    print(f" - Registros finales: {total_cleaned}\n")
+
+    """se guardan en el json los limpios"""
+    users_data = [user.model_dump() for user in cleaned_users]
     with open("users.json", "w", encoding="utf-8") as file:
         json.dump(users_data, file, ensure_ascii=False, indent=2)
 
-    print(f"Se han guardado {len(users)} usuarios en 'users.json'")
+    print(f"Datos guardados en 'users.json' ({total_cleaned} registros).")
 
-    """Analizar contraseñas"""
-    analizar_contraseñas(users)
+    """se hace el análisis de contraseñas"""
+    analizar_contraseñas(cleaned_users)
 
 
 # ==== FLASK ====
