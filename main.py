@@ -28,7 +28,6 @@ class Location(BaseModel):
     city: str
     state: str
     country: str
-    # randomuser puede devolver postcode como int o str
     postcode: Union[int, str]
     coordinates: Coordinates
     timezone: Timezone
@@ -86,23 +85,50 @@ class User(BaseModel):
     nat: str
 
 
-# ==== FUNCIÓN PRINCIPAL ====
+# ==== FUNCIONES AUXILIARES ====
+
+def remove_duplicates(users: List[Dict[str, Any]], unique_key: str = 'email') -> List[Dict[str, Any]]:
+    """
+    Elimina usuarios duplicados según una clave única (por defecto 'email').
+    Compatible con diccionarios anidados (por ejemplo 'login.uuid').
+
+    Args:
+        users (List[Dict[str, Any]]): Lista de usuarios (diccionarios anidados).
+        unique_key (str): Clave usada para identificar duplicados.
+                          Puede ser anidada, como 'login.uuid'.
+
+    Returns:
+        List[Dict[str, Any]]: Lista de usuarios únicos.
+    """
+    seen = set()
+    unique_users = []
+
+    for user in users:
+        # Permite acceder a claves anidadas como "login.uuid"
+        value = user
+        for part in unique_key.split('.'):
+            if isinstance(value, dict):
+                value = value.get(part)
+            else:
+                value = None
+                break
+
+        if value not in seen:
+            seen.add(value)
+            unique_users.append(user)
+
+    return unique_users
+
+# ==== FUNCIONES ETL ====
 
 def fetch_users(amount: int = 2000) -> List[User]:
     """
     Obtiene una lista de usuarios desde la API randomuser.me.
-
-    Args:
-        amount (int): Número de usuarios a solicitar (por defecto 2000).
-        nationality (Optional[str]): Código de país (por ejemplo, "ES" o "US").
-
-    Returns:
-        List[User]: Lista de instancias de la clase User.
     """
     params: Dict[str, Any] = {"results": amount}
 
     response = requests.get("https://randomuser.me/api/", params=params)
-    response.raise_for_status()  # lanza excepción si hay error HTTP
+    response.raise_for_status()
 
     data: Dict[str, Any] = response.json()
     users_json: List[Dict[str, Any]] = data["results"]
@@ -113,12 +139,6 @@ def fetch_users(amount: int = 2000) -> List[User]:
 def load_users_from_json(filename: str = "users.json") -> List[Dict[str, Any]]:
     """
     Carga usuarios desde un archivo JSON.
-
-    Args:
-        filename (str): Nombre del archivo JSON.
-
-    Returns:
-        List[Dict[str, Any]]: Lista de diccionarios con datos de usuarios.
     """
     try:
         with open(filename, "r", encoding="utf-8") as file:
@@ -131,29 +151,26 @@ def load_users_from_json(filename: str = "users.json") -> List[Dict[str, Any]]:
 def count_users_by_nationality(users_data: List[Dict[str, Any]]) -> Dict[str, int]:
     """
     Cuenta cuántos usuarios hay de cada nacionalidad.
-
-    Args:
-        users_data (List[Dict[str, Any]]): Lista de datos de usuarios.
-
-    Returns:
-        Dict[str, int]: Diccionario con nacionalidad como clave y cantidad como valor.
     """
     nationalities = [user["nat"] for user in users_data]
     return dict(Counter(nationalities))
 
 
 def main() -> None:
-    """Obtiene usuarios y los guarda en un archivo JSON."""
+    """Obtiene usuarios, elimina duplicados por correo y los guarda en un archivo JSON."""
     users: List[User] = fetch_users(amount=2000)
 
-    # Convertir los objetos User a diccionarios para poder serializar a JSON
+    # Convertir los objetos User a diccionarios
     users_data = [user.model_dump() for user in users]
+
+    # Eliminar duplicados por correo
+    users_data = remove_duplicates(users_data, unique_key='email')
 
     # Guardar en archivo JSON
     with open("users.json", "w", encoding="utf-8") as file:
         json.dump(users_data, file, ensure_ascii=False, indent=2)
 
-    print(f"Se han guardado {len(users)} usuarios en el archivo 'users.json'")
+    print(f"Se han guardado {len(users_data)} usuarios únicos (sin duplicados por email) en 'users.json'")
 
 
 # ==== APLICACIÓN WEB ====
@@ -173,14 +190,14 @@ def show_stats():
     total_users = len(users_data)
 
     # Ordenar nacionalidades por cantidad (mayor a menor)
-    nationalities_data = dict(sorted(nationalities_data.items(), 
-                                   key=lambda x: x[1], 
+    nationalities_data = dict(sorted(nationalities_data.items(),
+                                   key=lambda x: x[1],
                                    reverse=True))
 
     # Crear texto plano
     result = f"ESTADÍSTICAS DE USUARIOS POR NACIONALIDAD\n"
     result += f"==========================================\n\n"
-    result += f"Total de usuarios: {total_users}\n\n"
+    result += f"Total de usuarios (únicos por email): {total_users}\n\n"
     result += f"Distribución por nacionalidades:\n"
     result += f"--------------------------------\n"
 
