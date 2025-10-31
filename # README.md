@@ -23,57 +23,68 @@ Cuando se te solicite la contraseña, introduce `357253`.
 
 ## Ejecutar `main.sh` al inicio del sistema
 
-Para que el script `main.sh` se ejecute automáticamente al iniciar la máquina virtual, debes editar el archivo `/etc/rc.local`.
+## Daemon con systemd (Recomendado para producción)
+
+Para crear un daemon profesional que se gestione con systemd, sigue estos pasos:
 
 ### Pasos:
 
-1. Abre el archivo `/etc/rc.local` con permisos de superusuario:
-
+1. Crea el archivo del servicio:
    ```bash
-   sudo nano /etc/rc.local
+   sudo nano /etc/systemd/system/etl.service
    ```
 
-2. Antes de la línea `exit 0` (o al final si no existe), añade la siguiente línea:
+2. Añade el siguiente contenido:
+   ```ini
+   [Unit]
+   Description=ETL Application - Auto inicio
+   After=network.target
 
+   [Service]
+   Type=simple
+   User=guille
+   WorkingDirectory=/home/guille
+   ExecStart=/bin/bash /home/guille/main.sh
+   Restart=always
+   RestartSec=1
+
+   [Install]
+   WantedBy=multi-user.target
    ```
-   /bin/sh /home/guille/main.sh &
-   ```
 
-   El contenido debería quedar similar a:
-
+3. Recarga systemd y habilita el servicio:
    ```bash
-   #!/bin/bash
-   /bin/sh /home/guille/main.sh &
-   exit 0
+   sudo systemctl daemon-reload
+   sudo systemctl enable etl.service
+   sudo systemctl start etl.service
    ```
 
-3. Guarda el archivo y sal del editor (`CTRL+O`, `Enter`, luego `CTRL+X` en nano).
-
----
-
-## Alternativa: usar crontab
-
-Si prefieres usar `crontab` en lugar de `rc.local`, puedes seguir estos pasos:
-
-### Pasos:
-
-1. Instala cron si no está instalado:
+4. Verifica que está funcionando:
    ```bash
-   sudo apt update
-   sudo apt install cron
+   sudo systemctl status etl.service
    ```
 
-2. Edita el crontab:
-   ```bash
-   crontab -e
-   ```
+### Comandos útiles para gestionar el daemon:
 
-3. Añade la siguiente línea al final del archivo:
-   ```
-   @reboot /home/guille/main.sh
-   ```
+```bash
+# Ver estado
+sudo systemctl status etl.service
 
-4. Guarda el archivo y sal del editor (`CTRL+O`, `Enter`, luego `CTRL+X` si usas nano).
+# Ver logs en tiempo real
+sudo journalctl -u etl.service -f
+
+# Detener el servicio
+sudo systemctl stop etl.service
+
+# Iniciar el servicio
+sudo systemctl start etl.service
+
+# Reiniciar el servicio
+sudo systemctl restart etl.service
+
+# Deshabilitar el auto-inicio
+sudo systemctl disable etl.service
+```
 
 ---
 
