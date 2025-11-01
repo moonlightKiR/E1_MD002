@@ -28,10 +28,10 @@ def fetch_users(amount: int) -> List[User]:
     Obtiene una lista de usuarios desde la API randomuser.me.
     """
     params: Dict[str, Any] = {"results": amount}
-
+    print("he hecho el params")
     response = requests.get("https://randomuser.me/api/", params=params)
     response.raise_for_status()
-
+    print("he hecho el response")
     data: Dict[str, Any] = response.json()
     users_json: List[Dict[str, Any]] = data["results"]
     print("he hecho el fetch_users")
