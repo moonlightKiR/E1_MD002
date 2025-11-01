@@ -1,7 +1,7 @@
 import json
 from typing import List, Dict, Any
 
-def load_users_from_json(filename: str = "/home/users.json") -> List[Dict[str, Any]]:
+def load_users_from_json(filename: str = "~/users.json") -> List[Dict[str, Any]]:
     """
     Carga usuarios desde un archivo JSON.
     """
@@ -12,7 +12,7 @@ def load_users_from_json(filename: str = "/home/users.json") -> List[Dict[str, A
         print(f"Error: No se encontró el archivo {filename}")
         return []
 
-def save_users_to_json(users_data: List[Dict[str, Any]], filename: str = "users.json") -> None:
+def save_users_to_json(users_data: List[Dict[str, Any]], filename: str = "~/users.json") -> None:
     """
     Guarda una lista de diccionarios de usuarios en un archivo JSON.
     """
