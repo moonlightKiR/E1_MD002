@@ -1,7 +1,7 @@
 import json
 from typing import List, Dict, Any
 
-def load_users_from_json(filename: str = "users.json") -> List[Dict[str, Any]]:
+def load_users_from_json(filename: str = "/home/users.json") -> List[Dict[str, Any]]:
     """
     Carga usuarios desde un archivo JSON.
     """
