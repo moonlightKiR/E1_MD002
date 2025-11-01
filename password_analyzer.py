@@ -45,7 +45,7 @@ def categorizar_nivel_seguridad(pwd: Union[str, int]) -> str:
     Asigna un nivel de seguridad basado en la cantidad de reglas cumplidas.
     """
     reglas_cumplidas = obtener_reglas_cumplidas(pwd)
-    # ✅ FIX: sum() ahora funciona correctamente porque reglas_cumplidas solo contiene True/False
+    # FIX: sum() ahora funciona correctamente porque reglas_cumplidas solo contiene True/False
     conteo_reglas = sum(reglas_cumplidas)
 
     # Si no cumple la longitud mínima, se considera débil (NIVEL 0)
