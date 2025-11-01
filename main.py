@@ -1,5 +1,3 @@
-# main.py
-
 import requests
 from typing import List, Dict, Any
 from flask import Flask
@@ -19,6 +17,8 @@ from file_handler import load_users_from_json, save_users_to_json
 # Modifica este valor para cambiar la cantidad de usuarios descargados
 # =================================================================
 USER_AMOUNT: int = 2000  # Cantidad predeterminada de usuarios a descargar y analizar
+
+
 # =================================================================
 
 
@@ -38,9 +38,6 @@ def fetch_users(amount: int) -> List[User]:
     return [User.model_validate(user) for user in users_json]
 
 
-# Nota: La función load_users_from_json se ha movido a file_handler.py
-
-
 def count_users_by_nationality(users_data: List[Dict[str, Any]]) -> Dict[str, int]:
     """
     Cuenta cuántos usuarios hay de cada nacionalidad.
@@ -50,7 +47,7 @@ def count_users_by_nationality(users_data: List[Dict[str, Any]]) -> Dict[str, in
 
 
 def main(amount: int = USER_AMOUNT) -> None:
-    """Descarga, limpia, guarda y analiza usuarios."""
+    """Descarga, limpia, guarda y analiza usuarios (Modo Consola)."""
     print("--- 1. Obtención de Datos ---")
 
     users_original: List[User] = fetch_users(amount=amount)
@@ -69,32 +66,45 @@ def main(amount: int = USER_AMOUNT) -> None:
     print(f" - Registros finales (limpios y únicos): {total_unique}\n")
 
     # --- 3. Guardado en JSON (Usando file_handler.py) ---
-    save_users_to_json(users_data_cleaned_and_unique)  # 💥 Aquí usamos la nueva función
+    save_users_to_json(users_data_cleaned_and_unique)
 
-    # --- 4. Análisis de Contraseñas ---
+    # --- 4. Análisis de Contraseñas (Actualizado para niveles) ---
     print("\n--- 4. Análisis de Contraseñas ---")
     users_to_analyze = [User.model_validate(u) for u in users_data_cleaned_and_unique]
 
     stats = analizar_contraseñas(users_to_analyze)
 
-    print(f" Total_Usuarios analizados: {stats['total_usuarios']}")
-    print(f" Num_Contraseñas_Inválidas: {stats['total_invalidos']}\n")
-    print("Grupos más frecuentes con contraseñas inválidas:")
-    for (edad, genero, pais), count in stats["detalle"][:5]:
-        print(f" - {count} usuarios | {genero.capitalize()} de {pais}, edad {edad}")
+    total_inseguros = stats['total_inseguros']
+    total_usuarios = stats['total_usuarios']
+
+    print(f" Total_Usuarios analizados: {total_usuarios}")
+    print(f" Total Contraseñas Inseguras (Nivel 0-2): {total_inseguros}\n")
+
+    print("Distribución por Nivel de Seguridad:")
+    # Ordenar los niveles de menor a mayor
+    niveles_ordenados = sorted(stats['detalle_niveles'].items())
+    for nivel, count in niveles_ordenados:
+        print(f" - {nivel:<13}: {count} usuarios")
+
+    print("\nTop 5 grupos con contraseñas INSEGURAS (Nivel 0, 1 o 2):")
+    # El detalle ahora viene como (Nivel, Edad, Género, País)
+    for (nivel, edad, genero, pais), count in stats["detalle_top_grupos"][:5]:
+        print(f" - {count} usuarios | Nivel: {nivel}, {genero.capitalize()} de {pais}, edad {edad}")
 
 
-# ==== FLASK ====
+# ==== FLASK (Web App Logic) ====
 
 app = Flask(__name__)
+
+
 @app.route('/')
 def show_stats():
-    """Muestra estadísticas generales de usuarios y validación de contraseñas."""
-    # 💥 Aquí usamos la nueva función de carga
+    """Muestra estadísticas generales de usuarios y validación de contraseñas (Modo Web)."""
     users_data = load_users_from_json()
 
     if not users_data:
-        return "No se encontraron datos de usuarios.", 200, {'Content-Type': 'text/plain; charset=utf-8'}
+        return "No se encontraron datos de usuarios. Ejecute 'python main.py' primero.", 200, {
+            'Content-Type': 'text/plain; charset=utf-8'}
 
     total_users = len(users_data)
     result = "==========================================\n"
@@ -108,19 +118,29 @@ def show_stats():
     for nationality, count in sorted(nationalities_data.items(), key=lambda x: x[1], reverse=True):
         result += f" - {nationality}: {count} usuarios\n"
 
-    # 2. Análisis de contraseñas
+    # 2. Análisis de contraseñas (Nuevos Resultados)
     users = [User.model_validate(u) for u in users_data]
     stats = analizar_contraseñas(users)
 
-    result += "\n\n==========================================\n"
-    result += "VALIDACIÓN DE CONTRASEÑAS\n"
-    result += "==========================================\n"
-    result += f"Total de usuarios analizados: {stats['total_usuarios']}\n"
-    result += f"Contraseñas inválidas: {stats['total_invalidos']}\n\n"
-    result += "Top 5 grupos con contraseñas inválidas:\n"
+    total_inseguros = stats['total_inseguros']
+    total_usuarios = stats['total_usuarios']
 
-    for (edad, genero, pais), count in stats["detalle"][:5]:
-        result += f" - {count} usuarios | {genero.capitalize()} de {pais}, edad {edad}\n"
+    result += "\n\n==========================================\n"
+    result += "VALIDACIÓN DE CONTRASEÑAS POR NIVEL\n"
+    result += "==========================================\n"
+    result += f"Total de usuarios analizados: {total_usuarios}\n"
+    result += f"Total Contraseñas Inseguras (Nivel 0-2): {total_inseguros}\n\n"
+
+    result += "Distribución por Nivel de Seguridad:\n"
+    # Ordenar los niveles de menor a mayor
+    niveles_ordenados = sorted(stats['detalle_niveles'].items())
+    for nivel, count in niveles_ordenados:
+        result += f" - {nivel:<13}: {count} usuarios\n"
+
+    result += "\nTop 5 grupos con contraseñas INSEGURAS:\n"
+    # El detalle ahora viene como (Nivel, Edad, Género, País)
+    for (nivel, edad, genero, pais), count in stats["detalle_top_grupos"][:5]:
+        result += f" - {count} usuarios | Nivel: {nivel}, {genero.capitalize()} de {pais}, edad {edad}\n"
 
     # 3. Retornar texto consolidado
     return result, 200, {'Content-Type': 'text/plain; charset=utf-8'}
@@ -135,6 +155,7 @@ def start_web_app():
 
 if __name__ == "__main__":
 
+    # ⬅️ Bloque de ejecución original restaurado
     main(amount=USER_AMOUNT)
     if len(sys.argv) > 1 and sys.argv[1] == "web":
         start_web_app()
