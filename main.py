@@ -30,6 +30,7 @@ def fetch_users(amount: int) -> List[User]:
     params: Dict[str, Any] = {"results": amount}
     print("he hecho el params")
     response = requests.get("https://randomuser.me/api/", params=params)
+    print("he hecho la request")
     response.raise_for_status()
     print("he hecho el response")
     data: Dict[str, Any] = response.json()
