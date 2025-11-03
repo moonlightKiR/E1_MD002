@@ -16,7 +16,7 @@ from file_handler import load_users_from_json, save_users_to_json
 # CONSTANTE GLOBAL DE CONFIGURACIÓN
 # Modifica este valor para cambiar la cantidad de usuarios descargados
 # =================================================================
-USER_AMOUNT: int = 20  # Cantidad predeterminada de usuarios a descargar y analizar
+USER_AMOUNT: int = 2000  # Cantidad predeterminada de usuarios a descargar y analizar
 
 
 # =================================================================
